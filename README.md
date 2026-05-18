@@ -53,19 +53,6 @@ python -m http.server 8080
 
 Then visit `http://localhost:8080`
 
-## Deploy to GitHub Pages
-
-Your own copy of Hopway can be live in under a minute:
-
-1. **Fork or clone** this repository to your GitHub account
-2. Go to your repository **Settings** → **Pages** (left sidebar)
-3. Under **Source**, select **Deploy from a branch**
-4. Choose the **`main`** branch and **`/ (root)`** folder
-5. Click **Save**
-6. Wait ~30 seconds — your site will be live at `https://<your-username>.github.io/hopway`
-
-You can also set a custom domain in the same Pages settings panel.
-
 ## Share a Route
 
 After building a route, click **Copy Share Link**. The URL encodes your destinations, travel mode, dates, budget, and style. Anyone who opens it will see the same route and can generate the same AI prompt.
