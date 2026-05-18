@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trip Route Builder</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-header-text">
+        <div class="sidebar-eyebrow">Travel Planner</div>
+        <h1>Trip Route Builder</h1>
+      </div>
+      <button id="closeSidebar" class="close-btn" aria-label="Close sidebar">&times;</button>
+    </div>
+
+    <div class="sidebar-content">
+
+      <!-- Destination Input -->
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">📍</span>
+          <h2>Destinations</h2>
+        </div>
+        <textarea id="destinationsInput" rows="4"
+          placeholder="One destination per line&#10;e.g.&#10;Porto&#10;Vigo&#10;Madrid&#10;Barcelona"></textarea>
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <button id="buildRouteBtn" class="btn btn-primary">
+          <span id="buildBtnLabel">Build Route</span>
+        </button>
+      </section>
+
+      <!-- Route Controls -->
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">🗺️</span>
+          <h2>Route Mode</h2>
+        </div>
+        <!-- Hidden select for JS compatibility -->
+        <select id="routeMode">
+          <option value="road">Road</option>
+          <option value="walking">Walking</option>
+          <option value="rail" selected>Train / Metro</option>
+        </select>
+        <!-- Visual pill tabs -->
+        <div class="mode-tabs" id="modeTabs">
+          <button class="mode-tab" data-mode="road">🚗 Road</button>
+          <button class="mode-tab" data-mode="walking">🚶 Walk</button>
+          <button class="mode-tab active" data-mode="rail">🚆 Rail</button>
+        </div>
+        <div class="btn-row">
+          <button id="fitMapBtn" class="btn btn-secondary">⊡ Fit Map</button>
+          <button id="clearRouteBtn" class="btn btn-secondary">✕ Clear</button>
+          <button id="copyShareBtn" class="btn btn-secondary">⎘ Share</button>
+        </div>
+      </section>
+
+      <!-- Destination List -->
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">🧭</span>
+          <h2>Route Stops</h2>
+        </div>
+        <div id="destinationList" class="destination-list">
+          <p class="empty-state">Add destinations above and click Build Route.</p>
+        </div>
+      </section>
+
+      <!-- Places of Interest -->
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">★</span>
+          <h2>Places of Interest</h2>
+        </div>
+
+        <!-- Category chips -->
+        <div class="poi-categories" id="poiCategories">
+          <button class="poi-cat active" data-cat="hostel"    data-color="#1b3a5c">🛏 Hostel</button>
+          <button class="poi-cat"        data-cat="culture"   data-color="#7b3fa0">🏛 Culture</button>
+          <button class="poi-cat"        data-cat="food"      data-color="#c0392b">🍽 Food</button>
+          <button class="poi-cat"        data-cat="nature"    data-color="#1e6b3f">🌿 Nature</button>
+          <button class="poi-cat"        data-cat="transport" data-color="#b07d2a">🚉 Transport</button>
+          <button class="poi-cat"        data-cat="other"     data-color="#5a5a5a">📌 Other</button>
+        </div>
+
+        <!-- Add form -->
+        <div class="poi-add-form">
+          <input type="text" id="poiInput" placeholder="Place name or address…" autocomplete="off">
+          <input type="text" id="poiNote"  placeholder="Note (optional)" autocomplete="off">
+          <button id="addPoiBtn" class="btn btn-primary" style="margin-top:8px">+ Add Pin</button>
+        </div>
+
+        <!-- Saved pins list -->
+        <div id="poiList" class="poi-list">
+          <p class="empty-state">No pins yet — pick a category and add a place.</p>
+        </div>
+      </section>
+
+      <!-- AI Prompt Section -->
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">✦</span>
+          <h2>AI Itinerary Prompt</h2>
+        </div>
+        <div class="ai-form">
+          <label for="startDate">Start Date</label>
+          <input type="date" id="startDate">
+
+          <label for="endDate">End Date</label>
+          <input type="date" id="endDate">
+
+          <label for="budgetStyle">Budget</label>
+          <select id="budgetStyle">
+            <option value="budget" selected>Budget</option>
+            <option value="balanced">Balanced</option>
+            <option value="comfortable">Comfortable</option>
+          </select>
+
+          <label for="travelStyle">Travel Style</label>
+          <select id="travelStyle">
+            <option value="fast-paced" selected>Fast-paced</option>
+            <option value="relaxed">Relaxed</option>
+            <option value="cultural">Cultural</option>
+            <option value="nightlife">Nightlife</option>
+            <option value="food-focused">Food-focused</option>
+          </select>
+
+          <div class="btn-row">
+            <button id="generatePromptBtn" class="btn btn-secondary">✦ Generate</button>
+            <button id="copyPromptBtn" class="btn btn-secondary">⎘ Copy</button>
+          </div>
+        </div>
+        <textarea id="aiPromptOutput" rows="8" readonly
+          placeholder="Your generated AI prompt will appear here…"></textarea>
+      </section>
+
+      <!-- Status Messages -->
+      <section class="section" id="statusSection" style="display:none">
+        <div id="statusMessage" class="status-message"></div>
+      </section>
+
+    </div>
+  </aside>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="routes-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
