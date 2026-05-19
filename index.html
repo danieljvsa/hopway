@@ -31,6 +31,21 @@
         </div>
         <textarea id="destinationsInput" rows="4"
           placeholder="One destination per line&#10;e.g.&#10;Porto&#10;Vigo&#10;Madrid&#10;Barcelona"></textarea>
+        <details class="coords-toggle">
+          <summary>Set coordinates manually (optional)</summary>
+          <div class="coords-grid" id="destCoordsGrid">
+            <p class="form-hint" style="grid-column:1/-1;margin-top:0">One row per destination, in the same order as above.</p>
+            <span class="coords-label">Lat</span><span class="coords-label">Lng</span>
+            <input type="number" class="coord-input" id="destLat0" placeholder="41.1579" step="any">
+            <input type="number" class="coord-input" id="destLng0" placeholder="-8.6291" step="any">
+            <input type="number" class="coord-input" id="destLat1" placeholder="42.2406" step="any">
+            <input type="number" class="coord-input" id="destLng1" placeholder="-8.7207" step="any">
+            <input type="number" class="coord-input" id="destLat2" placeholder="" step="any">
+            <input type="number" class="coord-input" id="destLng2" placeholder="" step="any">
+            <input type="number" class="coord-input" id="destLat3" placeholder="" step="any">
+            <input type="number" class="coord-input" id="destLng3" placeholder="" step="any">
+          </div>
+        </details>
         <div class="progress-bar" id="progressBar">
           <div class="progress-fill" id="progressFill"></div>
         </div>
@@ -96,51 +111,22 @@
         <div class="poi-add-form">
           <input type="text" id="poiInput" placeholder="Place name or address…" autocomplete="off">
           <input type="text" id="poiNote"  placeholder="Note (optional)" autocomplete="off">
+          <details class="coords-toggle">
+            <summary>Set coordinates manually (optional)</summary>
+            <div class="coords-grid" style="margin-top:8px">
+              <span class="coords-label">Lat</span><span class="coords-label">Lng</span>
+              <input type="number" class="coord-input" id="poiLat" placeholder="41.1579" step="any">
+              <input type="number" class="coord-input" id="poiLng" placeholder="-8.6291" step="any">
+            </div>
+          </details>
           <button id="addPoiBtn" class="btn btn-primary" style="margin-top:8px">+ Add Pin</button>
+          <p class="form-hint">After adding, click ✎ on any pin to add a photo &amp; description.</p>
         </div>
 
         <!-- Saved pins list -->
         <div id="poiList" class="poi-list">
           <p class="empty-state">No pins yet — pick a category and add a place.</p>
         </div>
-      </section>
-
-      <!-- AI Prompt Section -->
-      <section class="section">
-        <div class="section-header">
-          <span class="section-icon">✦</span>
-          <h2>AI Itinerary Prompt</h2>
-        </div>
-        <div class="ai-form">
-          <label for="startDate">Start Date</label>
-          <input type="date" id="startDate">
-
-          <label for="endDate">End Date</label>
-          <input type="date" id="endDate">
-
-          <label for="budgetStyle">Budget</label>
-          <select id="budgetStyle">
-            <option value="budget" selected>Budget</option>
-            <option value="balanced">Balanced</option>
-            <option value="comfortable">Comfortable</option>
-          </select>
-
-          <label for="travelStyle">Travel Style</label>
-          <select id="travelStyle">
-            <option value="fast-paced" selected>Fast-paced</option>
-            <option value="relaxed">Relaxed</option>
-            <option value="cultural">Cultural</option>
-            <option value="nightlife">Nightlife</option>
-            <option value="food-focused">Food-focused</option>
-          </select>
-
-          <div class="btn-row">
-            <button id="generatePromptBtn" class="btn btn-secondary">✦ Generate</button>
-            <button id="copyPromptBtn" class="btn btn-secondary">⎘ Copy</button>
-          </div>
-        </div>
-        <textarea id="aiPromptOutput" rows="8" readonly
-          placeholder="Your generated AI prompt will appear here…"></textarea>
       </section>
 
       <!-- Status Messages -->
@@ -150,6 +136,37 @@
 
     </div>
   </aside>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <div class="modal-header">
+        <h3 id="editModalTitle">Edit details</h3>
+        <button id="editModalClose" class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <label for="editDescription">Description</label>
+          <textarea id="editDescription" rows="4" placeholder="Add notes, tips, or a description for this place…"></textarea>
+        </div>
+        <div>
+          <label>Photo</label>
+          <div class="image-upload-area" onclick="document.getElementById('editImageInput').click()">
+            <label class="image-upload-label">
+              <strong>Click to upload</strong> an image (JPG, PNG, WebP · max 3 MB)
+            </label>
+            <input type="file" id="editImageInput" accept="image/jpeg,image/png,image/webp">
+          </div>
+          <img id="editImagePreview" alt="Preview">
+          <button id="editImageRemove">&#10005; Remove photo</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="editModalCancel" class="btn btn-secondary">Cancel</button>
+        <button id="editModalSave"   class="btn btn-primary" style="width:auto">Save</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="routes-data.js"></script>
