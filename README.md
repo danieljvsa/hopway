@@ -1,4 +1,4 @@
-# Trip Route Builder
+# Hopway
 
 A simple static travel route planner using Leaflet, CARTO maps, OpenStreetMap geocoding, and shareable URLs.
 

@@ -1,5 +1,5 @@
 // ============================================================
-// Trip Route Builder — Main Application
+// Hopway — Main Application
 // ============================================================
 
 const ROUTE_STYLES = {
