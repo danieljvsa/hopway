@@ -492,8 +492,12 @@ function buildShareUrl() {
 async function openShareUrl() {
   if (!destinations.length) { setStatus("Build a route first.", "error"); return; }
   const url = buildShareUrl();
+  if (url.length > 8000) {
+    setStatus(`Share URL is too long (${url.length} chars). Try removing some destinations or POIs.`, "error");
+    return;
+  }
   await copyToClipboard(url);
-  setStatus("Presentation link copied! Open it in the same browser to include photos. Photos are not embedded in the URL.", "success");
+  setStatus("Presentation link copied! Open it in the same browser to keep photos.", "success");
 }
 
 // ============================================================
@@ -520,14 +524,14 @@ function loadStateFromUrl() {
         destinations = state.places.map((p, i) => ({
           originalQuery: p.q, label: p.label, lat: p.lat, lng: p.lng,
           description: p.desc || "",
-          imageDataUrl: imageStore.dests[i] || p.img || ""
+          imageDataUrl: imageStore.dests[i] || ""
         }));
         state.places.forEach(p => geocodeCache.set(normalizePlaceName(p.q), { label: p.label, lat: p.lat, lng: p.lng }));
       }
       if (state.pois?.length) {
         pois = state.pois.map((p, i) => ({
           ...p, description: p.desc || "",
-          imageDataUrl: imageStore.pois[i] || p.img || ""
+          imageDataUrl: imageStore.pois[i] || ""
         }));
       }
       if (!IS_VIEW_MODE) {
