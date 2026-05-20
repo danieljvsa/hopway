@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hopway</title>
+  <title>Trip Route Builder</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css">
 </head>
@@ -16,7 +16,7 @@
     <div class="sidebar-header">
       <div class="sidebar-header-text">
         <div class="sidebar-eyebrow">Travel Planner</div>
-        <h1>Hopway</h1>
+        <h1>Trip Route Builder</h1>
       </div>
       <button id="closeSidebar" class="close-btn" aria-label="Close sidebar">&times;</button>
     </div>
@@ -150,15 +150,16 @@
           <textarea id="editDescription" rows="4" placeholder="Add notes, tips, or a description for this place…"></textarea>
         </div>
         <div>
-          <label>Photo</label>
-          <div class="image-upload-area" onclick="document.getElementById('editImageInput').click()">
-            <label class="image-upload-label">
-              <strong>Click to upload</strong> an image (JPG, PNG, WebP · max 3 MB)
-            </label>
-            <input type="file" id="editImageInput" accept="image/jpeg,image/png,image/webp">
+          <label for="editImageUrl">Photo URL</label>
+          <div class="image-url-row">
+            <input type="url" id="editImageUrl" placeholder="https://i.imgur.com/example.jpg" autocomplete="off">
+            <button id="editImageLoad" class="btn btn-secondary" type="button">Load</button>
           </div>
-          <img id="editImagePreview" alt="Preview">
-          <button id="editImageRemove">&#10005; Remove photo</button>
+          <p class="form-hint" style="margin-top:6px">Paste any public image link (Imgur, Unsplash, your own host…)</p>
+          <div id="editImagePreviewWrap" style="display:none">
+            <img id="editImagePreview" alt="Preview">
+            <button id="editImageRemove" type="button">&#10005; Remove photo</button>
+          </div>
         </div>
       </div>
       <div class="modal-footer">

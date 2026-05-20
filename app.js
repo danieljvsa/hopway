@@ -20,12 +20,12 @@ const POI_CATEGORIES = {
 
 // --- State ---
 let map          = null;
-let destinations = [];   // { originalQuery, label, lat, lng, description, imageDataUrl }
+let destinations = [];   // { originalQuery, label, lat, lng, description, imageUrl }
 let routeLayers  = [];
 let markerLayers = [];
 let isBuilding   = false;
 let rebuildTimer = null;
-let pois         = [];   // { id, name, label, note, description, imageDataUrl, cat, lat, lng, visible }
+let pois         = [];   // { id, name, label, note, description, imageUrl, cat, lat, lng, visible }
 let poiMarkers   = {};
 let activeCat    = "hostel";
 let editingTarget = null;
@@ -108,7 +108,7 @@ async function buildRoute() {
   try {
     // Preserve existing customisations by originalQuery key
     const existingMeta = {};
-    destinations.forEach(d => { existingMeta[d.originalQuery] = { description: d.description, imageDataUrl: d.imageDataUrl }; });
+    destinations.forEach(d => { existingMeta[d.originalQuery] = { description: d.description, imageUrl: d.imageUrl }; });
 
     clearMap();
     if (rawPlaces.length < 2) {
@@ -199,9 +199,9 @@ function refreshDestMarkerPopup(index) {
 }
 
 function buildDestPopup(dest, i, mode) {
-  const hasImg  = dest.imageDataUrl;
+  const hasImg  = dest.imageUrl;
   const hasDesc = dest.description;
-  return `<div class="map-popup">${hasImg ? `<img src="${dest.imageDataUrl}" alt="" class="popup-img">` : ""}<div class="popup-body"><div class="popup-stop-num">${modeLabel(mode)} &middot; Stop ${i + 1}</div><strong class="popup-title">${escapeHtml(dest.originalQuery)}</strong>${hasDesc ? `<p class="popup-desc">${escapeHtml(dest.description)}</p>` : ""}<div class="popup-coords">${dest.lat.toFixed(4)}, ${dest.lng.toFixed(4)}</div>${!IS_VIEW_MODE ? `<button class="popup-edit-btn" data-index="${i}">&#9998; Edit details</button>` : ""}</div></div>`;
+  return `<div class="map-popup">${hasImg ? `<img src="${dest.imageUrl}" alt="" class="popup-img">` : ""}<div class="popup-body"><div class="popup-stop-num">${modeLabel(mode)} &middot; Stop ${i + 1}</div><strong class="popup-title">${escapeHtml(dest.originalQuery)}</strong>${hasDesc ? `<p class="popup-desc">${escapeHtml(dest.description)}</p>` : ""}<div class="popup-coords">${dest.lat.toFixed(4)}, ${dest.lng.toFixed(4)}</div>${!IS_VIEW_MODE ? `<button class="popup-edit-btn" data-index="${i}">&#9998; Edit details</button>` : ""}</div></div>`;
 }
 
 // ============================================================
@@ -236,9 +236,9 @@ function refreshPoiMarkerPopup(id) {
 
 function buildPoiPopup(poi) {
   const cat = POI_CATEGORIES[poi.cat];
-  const hasImg  = poi.imageDataUrl;
+  const hasImg  = poi.imageUrl;
   const hasDesc = poi.description || poi.note;
-  return `<div class="map-popup">${hasImg ? `<img src="${poi.imageDataUrl}" alt="" class="popup-img">` : ""}<div class="popup-body"><span class="popup-badge" style="background:${cat.bg};color:${cat.color}">${cat.emoji} ${cat.label}</span><strong class="popup-title">${escapeHtml(poi.name)}</strong>${hasDesc ? `<p class="popup-desc">${escapeHtml(poi.description || poi.note)}</p>` : ""}<div class="popup-coords">${poi.lat.toFixed(4)}, ${poi.lng.toFixed(4)}</div>${!IS_VIEW_MODE ? `<button class="popup-edit-btn" data-poi-id="${poi.id}">&#9998; Edit details</button>` : ""}</div></div>`;
+  return `<div class="map-popup">${hasImg ? `<img src="${poi.imageUrl}" alt="" class="popup-img">` : ""}<div class="popup-body"><span class="popup-badge" style="background:${cat.bg};color:${cat.color}">${cat.emoji} ${cat.label}</span><strong class="popup-title">${escapeHtml(poi.name)}</strong>${hasDesc ? `<p class="popup-desc">${escapeHtml(poi.description || poi.note)}</p>` : ""}<div class="popup-coords">${poi.lat.toFixed(4)}, ${poi.lng.toFixed(4)}</div>${!IS_VIEW_MODE ? `<button class="popup-edit-btn" data-poi-id="${poi.id}">&#9998; Edit details</button>` : ""}</div></div>`;
 }
 
 // ============================================================
@@ -250,11 +250,16 @@ function openEditModal(type, indexOrId) {
   if (!item) return;
   $("#editModalTitle").textContent = type === "dest" ? `Edit stop: ${item.originalQuery}` : `Edit pin: ${item.name}`;
   $("#editDescription").value = item.description || "";
+  $("#editImageUrl").value = item.imageUrl || "";
+  const wrap = $("#editImagePreviewWrap");
   const preview = $("#editImagePreview");
-  preview.src = item.imageDataUrl || "";
-  preview.style.display = item.imageDataUrl ? "block" : "none";
-  $("#editImageRemove").style.display = item.imageDataUrl ? "inline-flex" : "none";
-  $("#editImageInput").value = "";
+  if (item.imageUrl) {
+    preview.src = item.imageUrl;
+    wrap.style.display = "block";
+  } else {
+    preview.src = "";
+    wrap.style.display = "none";
+  }
   $("#editModal").classList.add("open");
   setTimeout(() => $("#editDescription").focus(), 50);
 }
@@ -267,18 +272,17 @@ function closeEditModal() {
 function saveEditModal() {
   if (!editingTarget) return;
   const { type, indexOrId } = editingTarget;
-  const description  = $("#editDescription").value.trim();
-  const preview      = $("#editImagePreview");
-  const imageDataUrl = preview.style.display !== "none" ? preview.src : "";
+  const description = $("#editDescription").value.trim();
+  const imageUrl    = $("#editImageUrl").value.trim();
 
   if (type === "dest") {
-    destinations[indexOrId].description  = description;
-    destinations[indexOrId].imageDataUrl = imageDataUrl;
+    destinations[indexOrId].description = description;
+    destinations[indexOrId].imageUrl    = imageUrl;
     refreshDestMarkerPopup(indexOrId);
     renderDestinationList();
   } else {
     const poi = pois.find(p => p.id === indexOrId);
-    if (poi) { poi.description = description; poi.imageDataUrl = imageDataUrl; refreshPoiMarkerPopup(indexOrId); renderPoiList(); }
+    if (poi) { poi.description = description; poi.imageUrl = imageUrl; refreshPoiMarkerPopup(indexOrId); renderPoiList(); }
   }
   closeEditModal();
 }
@@ -289,25 +293,24 @@ function initEditModal() {
   $("#editModalSave").addEventListener("click", saveEditModal);
   $("#editModalCancel").addEventListener("click", closeEditModal);
 
-  $("#editImageInput").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 3 * 1024 * 1024) { setStatus("Image must be under 3 MB.", "error"); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const preview = $("#editImagePreview");
-      preview.src = ev.target.result;
-      preview.style.display = "block";
-      $("#editImageRemove").style.display = "inline-flex";
-    };
-    reader.readAsDataURL(file);
-  });
+  // Load image from URL
+  function loadImageUrl() {
+    const url = $("#editImageUrl").value.trim();
+    const wrap = $("#editImagePreviewWrap");
+    const preview = $("#editImagePreview");
+    if (!url) { wrap.style.display = "none"; preview.src = ""; return; }
+    preview.src = url;
+    preview.onload  = () => { wrap.style.display = "block"; };
+    preview.onerror = () => { wrap.style.display = "none"; setStatus("Could not load image — check the URL is a direct image link.", "error"); };
+  }
+
+  $("#editImageLoad").addEventListener("click", loadImageUrl);
+  $("#editImageUrl").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); loadImageUrl(); } });
 
   $("#editImageRemove").addEventListener("click", () => {
-    const preview = $("#editImagePreview");
-    preview.src = ""; preview.style.display = "none";
-    $("#editImageRemove").style.display = "none";
-    $("#editImageInput").value = "";
+    $("#editImageUrl").value = "";
+    $("#editImagePreview").src = "";
+    $("#editImagePreviewWrap").style.display = "none";
   });
 
   document.addEventListener("keydown", (e) => {
@@ -326,7 +329,7 @@ function renderDestinationList() {
     return;
   }
   container.innerHTML = destinations.map((dest, i) => {
-    const hasCustom = dest.description || dest.imageDataUrl;
+    const hasCustom = dest.description || dest.imageUrl;
     const connector = i < destinations.length - 1 ? `<div class="dest-connector"></div>` : "";
     return `<div class="dest-card" data-index="${i}"><span class="dest-number">${i + 1}</span><div class="dest-info"><div class="dest-original">${escapeHtml(dest.originalQuery)}${hasCustom ? ' <span class="dest-has-custom" title="Has details">&#9733;</span>' : ""}</div><div class="dest-matched">${escapeHtml(dest.label)}</div></div><div class="dest-actions"><button class="edit-dest-btn" data-index="${i}" title="Edit details">&#9998;</button><button class="move-up-btn" data-index="${i}" title="Move up" ${i === 0 ? "disabled" : ""}>&#9652;</button><button class="move-down-btn" data-index="${i}" title="Move down" ${i === destinations.length - 1 ? "disabled" : ""}>&#9662;</button><button class="remove-btn" data-index="${i}" title="Remove">&times;</button></div></div>${connector}`;
   }).join("");
@@ -426,7 +429,7 @@ async function addPoi() {
       lat = resolved.lat; lng = resolved.lng; label = resolved.label;
     }
     const id = `poi_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
-    const poi = { id, name, label, note: noteEl.value.trim(), description: "", imageDataUrl: "", cat: activeCat, lat, lng, visible: true };
+    const poi = { id, name, label, note: noteEl.value.trim(), description: "", imageUrl: "", cat: activeCat, lat, lng, visible: true };
     pois.push(poi); addPoiMarker(poi); renderPoiList();
     input.value = ""; noteEl.value = "";
     $("#poiLat").value = ""; $("#poiLng").value = "";
@@ -453,7 +456,7 @@ function renderPoiList() {
   if (!pois.length) { container.innerHTML = '<p class="empty-state">No pins yet.</p>'; return; }
   container.innerHTML = pois.map(poi => {
     const cat = POI_CATEGORIES[poi.cat];
-    const hasCustom = poi.description || poi.imageDataUrl;
+    const hasCustom = poi.description || poi.imageUrl;
     return `<div class="poi-card"><div class="poi-dot" style="background:${cat.color}"></div><div class="poi-card-info"><div class="poi-card-name">${escapeHtml(poi.name)}${hasCustom ? ' <span class="dest-has-custom">&#9733;</span>' : ""}</div><div class="poi-card-meta"><span class="poi-badge" style="background:${cat.bg};color:${cat.color}">${cat.emoji} ${cat.label}</span>${poi.note ? `<span class="poi-card-note">${escapeHtml(poi.note)}</span>` : ""}</div></div><button class="poi-edit-btn" data-id="${poi.id}" title="Edit details">&#9998;</button><button class="poi-toggle-btn ${poi.visible ? "" : "hidden-pin"}" data-id="${poi.id}" title="${poi.visible ? "Hide" : "Show"}">${poi.visible ? "&#128065;" : "&#128683;"}</button><button class="poi-remove-btn" data-id="${poi.id}" title="Remove">&times;</button></div>`;
   }).join("");
 }
@@ -462,27 +465,10 @@ function renderPoiList() {
 // Share — full state encoded, opens presentation view
 // ============================================================
 function buildShareUrl() {
-  // Images are stored separately in sessionStorage (keyed by share token)
-  // so they don't bloat the URL. They are available when opening the share
-  // link in the same browser session; otherwise the pin/stop shows without image.
-  const token = Date.now().toString(36);
-
-  // Collect images keyed by dest index / poi id
-  const imageStore = {
-    dests: destinations.map(d => d.imageDataUrl || ""),
-    pois:  pois.map(p => p.imageDataUrl || "")
-  };
-  try {
-    sessionStorage.setItem(`trb_imgs_${token}`, JSON.stringify(imageStore));
-  } catch (e) {
-    // sessionStorage full or unavailable — images simply won't appear in share view
-    console.warn("Could not store images in sessionStorage:", e);
-  }
-
+  // imageUrl is a plain URL string — tiny, safe to embed directly in the share URL
   const state = {
-    token,
-    places: destinations.map(d => ({ q: d.originalQuery, lat: d.lat, lng: d.lng, label: d.label, desc: d.description || "" })),
-    pois:   pois.map(p => ({ id: p.id, name: p.name, label: p.label, note: p.note || "", cat: p.cat, lat: p.lat, lng: p.lng, visible: p.visible, desc: p.description || "" })),
+    places: destinations.map(d => ({ q: d.originalQuery, lat: d.lat, lng: d.lng, label: d.label, desc: d.description || "", img: d.imageUrl || "" })),
+    pois:   pois.map(p => ({ id: p.id, name: p.name, label: p.label, note: p.note || "", cat: p.cat, lat: p.lat, lng: p.lng, visible: p.visible, desc: p.description || "", img: p.imageUrl || "" })),
     mode: $("#routeMode").value
   };
   const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
@@ -497,7 +483,7 @@ async function openShareUrl() {
     return;
   }
   await copyToClipboard(url);
-  setStatus("Presentation link copied! Open it in the same browser to keep photos.", "success");
+  setStatus("Presentation link copied! Photos and all data are included in the link.", "success");
 }
 
 // ============================================================
@@ -511,27 +497,18 @@ function loadStateFromUrl() {
     try {
       const state = JSON.parse(decodeURIComponent(escape(atob(stateParam))));
 
-      // Try to restore images from sessionStorage using the share token
-      let imageStore = { dests: [], pois: [] };
-      if (state.token) {
-        try {
-          const raw = sessionStorage.getItem(`trb_imgs_${state.token}`);
-          if (raw) imageStore = JSON.parse(raw);
-        } catch(e) { /* images unavailable — show without them */ }
-      }
-
       if (state.places?.length) {
-        destinations = state.places.map((p, i) => ({
+        destinations = state.places.map(p => ({
           originalQuery: p.q, label: p.label, lat: p.lat, lng: p.lng,
           description: p.desc || "",
-          imageDataUrl: imageStore.dests[i] || ""
+          imageUrl: p.img || ""
         }));
         state.places.forEach(p => geocodeCache.set(normalizePlaceName(p.q), { label: p.label, lat: p.lat, lng: p.lng }));
       }
       if (state.pois?.length) {
-        pois = state.pois.map((p, i) => ({
+        pois = state.pois.map(p => ({
           ...p, description: p.desc || "",
-          imageDataUrl: imageStore.pois[i] || ""
+          imageUrl: p.img || ""
         }));
       }
       if (!IS_VIEW_MODE) {
