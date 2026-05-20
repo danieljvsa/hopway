@@ -1,5 +1,5 @@
 // ============================================================
-// Hopway — Main Application
+// Trip Route Builder — Main Application
 // ============================================================
 
 const ROUTE_STYLES = {
@@ -462,9 +462,27 @@ function renderPoiList() {
 // Share — full state encoded, opens presentation view
 // ============================================================
 function buildShareUrl() {
+  // Images are stored separately in sessionStorage (keyed by share token)
+  // so they don't bloat the URL. They are available when opening the share
+  // link in the same browser session; otherwise the pin/stop shows without image.
+  const token = Date.now().toString(36);
+
+  // Collect images keyed by dest index / poi id
+  const imageStore = {
+    dests: destinations.map(d => d.imageDataUrl || ""),
+    pois:  pois.map(p => p.imageDataUrl || "")
+  };
+  try {
+    sessionStorage.setItem(`trb_imgs_${token}`, JSON.stringify(imageStore));
+  } catch (e) {
+    // sessionStorage full or unavailable — images simply won't appear in share view
+    console.warn("Could not store images in sessionStorage:", e);
+  }
+
   const state = {
-    places: destinations.map(d => ({ q: d.originalQuery, lat: d.lat, lng: d.lng, label: d.label, desc: d.description || "", img: d.imageDataUrl || "" })),
-    pois: pois.map(p => ({ id: p.id, name: p.name, label: p.label, note: p.note || "", cat: p.cat, lat: p.lat, lng: p.lng, visible: p.visible, desc: p.description || "", img: p.imageDataUrl || "" })),
+    token,
+    places: destinations.map(d => ({ q: d.originalQuery, lat: d.lat, lng: d.lng, label: d.label, desc: d.description || "" })),
+    pois:   pois.map(p => ({ id: p.id, name: p.name, label: p.label, note: p.note || "", cat: p.cat, lat: p.lat, lng: p.lng, visible: p.visible, desc: p.description || "" })),
     mode: $("#routeMode").value
   };
   const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
@@ -475,7 +493,7 @@ async function openShareUrl() {
   if (!destinations.length) { setStatus("Build a route first.", "error"); return; }
   const url = buildShareUrl();
   await copyToClipboard(url);
-  setStatus("Presentation link copied! Open it in a new tab for the map-only view.", "success");
+  setStatus("Presentation link copied! Open it in the same browser to include photos. Photos are not embedded in the URL.", "success");
 }
 
 // ============================================================
@@ -488,12 +506,29 @@ function loadStateFromUrl() {
   if (stateParam) {
     try {
       const state = JSON.parse(decodeURIComponent(escape(atob(stateParam))));
+
+      // Try to restore images from sessionStorage using the share token
+      let imageStore = { dests: [], pois: [] };
+      if (state.token) {
+        try {
+          const raw = sessionStorage.getItem(`trb_imgs_${state.token}`);
+          if (raw) imageStore = JSON.parse(raw);
+        } catch(e) { /* images unavailable — show without them */ }
+      }
+
       if (state.places?.length) {
-        destinations = state.places.map(p => ({ originalQuery: p.q, label: p.label, lat: p.lat, lng: p.lng, description: p.desc || "", imageDataUrl: p.img || "" }));
+        destinations = state.places.map((p, i) => ({
+          originalQuery: p.q, label: p.label, lat: p.lat, lng: p.lng,
+          description: p.desc || "",
+          imageDataUrl: imageStore.dests[i] || p.img || ""
+        }));
         state.places.forEach(p => geocodeCache.set(normalizePlaceName(p.q), { label: p.label, lat: p.lat, lng: p.lng }));
       }
       if (state.pois?.length) {
-        pois = state.pois.map(p => ({ ...p, description: p.desc || "", imageDataUrl: p.img || "" }));
+        pois = state.pois.map((p, i) => ({
+          ...p, description: p.desc || "",
+          imageDataUrl: imageStore.pois[i] || p.img || ""
+        }));
       }
       if (!IS_VIEW_MODE) {
         if (state.mode)   { const el = $("#routeMode"); if (el) el.value = state.mode; syncModeTabs(state.mode); }
